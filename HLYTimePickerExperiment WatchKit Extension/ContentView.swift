@@ -59,7 +59,7 @@ struct SubTickView: View {
 }
 
 struct ContentView: View {
-    @EnvironmentObject var lolTime: TimeModel
+    @EnvironmentObject var timeModel: TimeModel
 
     var body: some View {
         GeometryReader { geometry in
@@ -78,7 +78,7 @@ struct ContentView: View {
                     .fill(Color.orange)
                     .frame(width: 5, height: 5)
                     .offset(y: tickOffset - 2)
-                    .rotationEffect(lolTime.isHour ? lolTime.hourAngle : lolTime.minuteAngle)
+                    .rotationEffect(timeModel.isHour ? timeModel.hourAngle : timeModel.minuteAngle)
                     .animation(.linear)
 
                 // Main ticks
@@ -99,7 +99,7 @@ struct ContentView: View {
                     let angle = hour * hourScale * 2
                     let correctedAngle = angle + 180
                     HStack {
-                        Text(String(format: "%02d", angle/(lolTime.isHour ? hourScale : minuteScale)))
+                        Text(String(format: "%02d", angle/(timeModel.isHour ? hourScale : minuteScale)))
                             .font(.footnote)
                             .rotationEffect(.degrees(Double(-correctedAngle)))
                     }
@@ -110,7 +110,7 @@ struct ContentView: View {
                 // Pickers
                 HStack() {
                     // Hour
-                    Picker("", selection: $lolTime.hour) {
+                    Picker("", selection: $timeModel.hour) {
                         ForEach(0..<24) {
                             Text(String(format: "%02d", $0))
                                 .font(.title3)
@@ -120,7 +120,7 @@ struct ContentView: View {
                     .pickerStyle(WheelPickerStyle())
                     .frame(maxWidth:40, maxHeight: 40)
                     .onTapGesture {
-                        self.lolTime.isHour = true
+                        self.timeModel.isHour = true
                     }
 
                     // Separator
@@ -129,7 +129,7 @@ struct ContentView: View {
                         .padding(.bottom, 5)
 
                     // Minute
-                    Picker("", selection: $lolTime.minute) {
+                    Picker("", selection: $timeModel.minute) {
                         ForEach(0..<60) {
                             Text(String(format: "%02d", $0))
                                 .font(.title3)
@@ -139,7 +139,7 @@ struct ContentView: View {
                     .pickerStyle(WheelPickerStyle())
                     .frame(maxWidth: 40, maxHeight: 40)
                     .onTapGesture {
-                        self.lolTime.isHour = false
+                        self.timeModel.isHour = false
                     }
                 }
                 .frame(height: 50)
