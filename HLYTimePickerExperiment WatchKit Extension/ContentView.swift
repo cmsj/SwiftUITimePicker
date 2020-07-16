@@ -73,14 +73,6 @@ struct ContentView: View {
                     .padding(0)
                     .opacity(0.0)
 
-                // Orange marker ball
-                Circle()
-                    .fill(Color.orange)
-                    .frame(width: 5, height: 5)
-                    .offset(y: tickOffset - 2)
-                    .rotationEffect(timeModel.isHour ? timeModel.hourAngle : timeModel.minuteAngle)
-                    .animation(.linear)
-
                 // Main ticks
                 ForEach(0..<12) { hour in
                     MainTickView(tickOffset: tickOffset, angle: hour * hourScale * 2)
@@ -93,6 +85,14 @@ struct ContentView: View {
                         SubTickView(tickOffset: tickOffset, angle: minute * minuteScale)
                     }
                 }
+
+                // Orange marker ball
+                Circle()
+                    .fill(Color.orange)
+                    .frame(width: 5, height: 5)
+                    .offset(y: tickOffset - 2)
+                    .rotationEffect(timeModel.isHour ? timeModel.hourAngle : timeModel.minuteAngle)
+                    .animation(.linear)
 
                 // Numbers (hours or minutes)
                 ForEach(0..<12) { hour in
