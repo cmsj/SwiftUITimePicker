@@ -14,19 +14,19 @@ let minuteScale = 6
 class TimeModel: ObservableObject {
     @Published var hour: Int = 9
     @Published var minute: Int = 41
-    @Published var hourAngle: Angle = .degrees(0)
-    @Published var minuteAngle: Angle = .degrees(0)
+    @Published var indicatorHourAngle: Angle = .degrees(0)
+    @Published var indicatorMinuteAngle: Angle = .degrees(0)
     @Published var isHour: Bool = true
 
-    private var angleHourCancellable: AnyCancellable? = nil
-    private var angleMinuteCancellable: AnyCancellable? = nil
+    private var indicatorHourCancellable: AnyCancellable? = nil
+    private var indicatorMinuteCancellable: AnyCancellable? = nil
 
     init() {
-        angleHourCancellable = $hour.sink(receiveValue: { [self] (hour) in
-            hourAngle = .degrees(Double(hour * hourScale) + 180)
+        indicatorHourCancellable = $hour.sink(receiveValue: { [self] (hour) in
+            indicatorHourAngle = .degrees(Double(hour * hourScale) + 180)
         })
-        angleMinuteCancellable = $minute.sink(receiveValue: { [self] (minute) in
-            minuteAngle = .degrees(Double(minute * minuteScale) + 180)
+        indicatorMinuteCancellable = $minute.sink(receiveValue: { [self] (minute) in
+            indicatorMinuteAngle = .degrees(Double(minute * minuteScale) + 180)
         })
     }
 }
@@ -70,7 +70,7 @@ struct ContentView: View {
                 Circle()
                     .stroke(Color.blue)
                     .frame(width: geometry.size.width, height: geometry.size.height)
-                    .padding(0)
+                    .padding(1)
                     .opacity(0.0)
 
                 // Main ticks
@@ -82,7 +82,7 @@ struct ContentView: View {
                 ForEach(0..<60) { minute in
                     let angle = minute * minuteScale
                     if angle % 30 != 0 {
-                        SubTickView(tickOffset: tickOffset, angle: minute * minuteScale)
+                        SubTickView(tickOffset: tickOffset, angle: angle)
                     }
                 }
 
@@ -91,7 +91,7 @@ struct ContentView: View {
                     .fill(Color.orange)
                     .frame(width: 5, height: 5)
                     .offset(y: tickOffset - 2)
-                    .rotationEffect(timeModel.isHour ? timeModel.hourAngle : timeModel.minuteAngle)
+                    .rotationEffect(timeModel.isHour ? timeModel.indicatorHourAngle : timeModel.indicatorMinuteAngle)
                     .animation(.linear)
 
                 // Numbers (hours or minutes)
