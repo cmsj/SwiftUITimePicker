@@ -1,6 +1,6 @@
 //
-//  ContentView.swift
-//  HLYTimePickerExperiment WatchKit Extension
+//  HLYTimePicker.swift
+//  Hourly 3
 //
 //  Created by Chris Jones on 16/07/2020.
 //
@@ -8,61 +8,20 @@
 import SwiftUI
 import Combine
 
-let hourScale = 15
-let minuteScale = 6
+struct HLYTimePicker: View {
+    @Binding var hour: Int
+    @Binding var minute: Int
 
-class TimeModel: ObservableObject {
-    @Published var hour: Int = 9
-    @Published var minute: Int = 41
-    @Published var indicatorHourAngle: Angle = .degrees(0)
-    @Published var indicatorMinuteAngle: Angle = .degrees(0)
-    @Published var isHour: Bool = true
+    @State var isEditingHour: Bool = true
 
-    private var indicatorHourCancellable: AnyCancellable? = nil
-    private var indicatorMinuteCancellable: AnyCancellable? = nil
+    var indicatorHourAngle: Angle { .degrees(Double(hour * hourScale + 180)) }
+    var indicatorMinuteAngle: Angle { .degrees(Double(minute * minuteScale + 180)) }
 
-    init() {
-        indicatorHourCancellable = $hour.sink(receiveValue: { [self] (hour) in
-            indicatorHourAngle = .degrees(Double(hour * hourScale) + 180)
-        })
-        indicatorMinuteCancellable = $minute.sink(receiveValue: { [self] (minute) in
-            indicatorMinuteAngle = .degrees(Double(minute * minuteScale) + 180)
-        })
-    }
-}
-
-struct MainTickView: View {
-    let tickOffset: CGFloat
-    let angle: Int
+    let hourScale: Int = 15
+    let minuteScale: Int = 6
 
     var body: some View {
-        RoundedRectangle(cornerRadius: 25.0, style: .continuous)
-            .fill(Color.white)
-            .frame(width:2, height: 3)
-            .offset(y: tickOffset - 1)
-            .rotationEffect(.degrees(Double(angle)))
-    }
-}
-
-struct SubTickView: View {
-    let tickOffset: CGFloat
-    let angle: Int
-
-    var body: some View {
-        RoundedRectangle(cornerRadius: 25.0, style: .continuous)
-            .fill(Color.gray)
-            .frame(width: 1, height: 5)
-            .opacity(0.5)
-            .offset(y: tickOffset - 2)
-            .rotationEffect(.degrees(Double(angle)))
-    }
-}
-
-struct ContentView: View {
-    @EnvironmentObject var timeModel: TimeModel
-
-    var body: some View {
-        GeometryReader { geometry in
+        let ourView = GeometryReader { geometry in
             let tickOffset = min(geometry.size.height, geometry.size.width) / 2
 
             ZStack {
@@ -73,16 +32,33 @@ struct ContentView: View {
                     .padding(1)
                     .opacity(0.0)
 
-                // Main ticks
-                ForEach(0..<12) { hour in
-                    MainTickView(tickOffset: tickOffset, angle: hour * hourScale * 2)
-                }
+                // Render the ticks and labels
+                ForEach(0..<60) { tickPosition in
+                    let angle = tickPosition * minuteScale
+                    if angle % 30 == 0 {
+                        // This is an hour tick
+                        let correctedAngle: Int = angle + 180
 
-                // Sub ticks
-                ForEach(0..<60) { minute in
-                    let angle = minute * minuteScale
-                    if angle % 30 != 0 {
-                        SubTickView(tickOffset: tickOffset, angle: angle)
+                        RoundedRectangle(cornerRadius: 25.0, style: .continuous)
+                            .fill(Color.white)
+                            .frame(width:2, height: 3)
+                            .offset(y: tickOffset - 1)
+                            .rotationEffect(.degrees(Double(angle)))
+                        HStack {
+                            Text(String(format: "%02d", angle/(isEditingHour ? hourScale : minuteScale)))
+                                .font(.footnote)
+                                .rotationEffect(.degrees(Double(-correctedAngle)))
+                        }
+                        .offset(y: tickOffset - 15)
+                        .rotationEffect(.degrees(Double(correctedAngle)))
+                    } else {
+                        // This is a minute tick
+                        RoundedRectangle(cornerRadius: 25.0, style: .continuous)
+                            .fill(Color.gray)
+                            .frame(width: 1, height: 5)
+                            .opacity(0.5)
+                            .offset(y: tickOffset - 2)
+                            .rotationEffect(.degrees(Double(angle)))
                     }
                 }
 
@@ -91,26 +67,13 @@ struct ContentView: View {
                     .fill(Color.orange)
                     .frame(width: 5, height: 5)
                     .offset(y: tickOffset - 2)
-                    .rotationEffect(timeModel.isHour ? timeModel.indicatorHourAngle : timeModel.indicatorMinuteAngle)
+                    .rotationEffect(self.isEditingHour ? self.indicatorHourAngle : self.indicatorMinuteAngle)
                     .animation(.linear)
-
-                // Numbers (hours or minutes)
-                ForEach(0..<12) { hour in
-                    let angle = hour * hourScale * 2
-                    let correctedAngle = angle + 180
-                    HStack {
-                        Text(String(format: "%02d", angle/(timeModel.isHour ? hourScale : minuteScale)))
-                            .font(.footnote)
-                            .rotationEffect(.degrees(Double(-correctedAngle)))
-                    }
-                    .offset(y: tickOffset - 15)
-                    .rotationEffect(.degrees(Double(correctedAngle)))
-                }
 
                 // Pickers
                 HStack() {
                     // Hour
-                    Picker("", selection: $timeModel.hour) {
+                    Picker("", selection: $hour) {
                         ForEach(0..<24) {
                             Text(String(format: "%02d", $0))
                                 .font(.title3)
@@ -120,7 +83,7 @@ struct ContentView: View {
                     .pickerStyle(WheelPickerStyle())
                     .frame(maxWidth:40, maxHeight: 40)
                     .onTapGesture {
-                        self.timeModel.isHour = true
+                        self.isEditingHour = true
                     }
 
                     // Separator
@@ -129,7 +92,7 @@ struct ContentView: View {
                         .padding(.bottom, 5)
 
                     // Minute
-                    Picker("", selection: $timeModel.minute) {
+                    Picker("", selection: $minute) {
                         ForEach(0..<60) {
                             Text(String(format: "%02d", $0))
                                 .font(.title3)
@@ -139,19 +102,30 @@ struct ContentView: View {
                     .pickerStyle(WheelPickerStyle())
                     .frame(maxWidth: 40, maxHeight: 40)
                     .onTapGesture {
-                        self.timeModel.isHour = false
+                        self.isEditingHour = false
                     }
                 }
                 .frame(height: 50)
             }
+            .navigationTitle("Back")
         }
+        return ourView
     }
 }
 
-struct ContentView_Previews: PreviewProvider {
-    static var previews: some View {
-        Group {
-            ContentView().environmentObject(TimeModel())
-        }
+#if DEBUG
+struct HLYTimePicker_PreviewHelper: View {
+    @State private var hour: Int = 9
+    @State private var minute: Int = 41
+
+    var body: some View {
+        HLYTimePicker(hour: $hour, minute: $minute)
     }
 }
+
+struct HLYTimePicker_Previews: PreviewProvider {
+    static var previews: some View {
+        HLYTimePicker_PreviewHelper()
+    }
+}
+#endif
